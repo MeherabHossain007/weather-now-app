@@ -1,50 +1,14 @@
+import { CitySearchResult, DayForecast, HourlyForecast, WeatherData } from "@/types/weather";
+
 // Configuration
 const CONFIG = {
-  API_KEY: "9d729cfd40c256defac28e6a8266b774",
+ API_KEY: process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY || "", 
   BASE_URL: "https://api.openweathermap.org/data/2.5",
   GEO_URL: "https://api.openweathermap.org/geo/1.0",
-  CACHE_DURATION: 10 * 60 * 1000, // 10 minutes
+  CACHE_DURATION: 10 * 60 * 1000,
   DEFAULT_FORECAST_DAYS: 7,
   HOURLY_LIMIT: 8,
 } as const;
-
-// Types
-interface WeatherData {
-  id: number;
-  name: string;
-  country: string;
-  temperature: number;
-  feelsLike: number;
-  humidity: number;
-  windSpeed: number;
-  pressure: number;
-  condition: string;
-  description: string;
-  icon: string;
-  timestamp: number;
-}
-
-interface DayForecast {
-  date: string;
-  high: number;
-  low: number;
-  condition: string;
-  icon: string;
-}
-
-interface HourlyForecast {
-  time: Date;
-  temperature: number;
-  condition: string;
-  icon: string;
-}
-
-interface CitySearchResult {
-  name: string;
-  country: string;
-  state?: string;
-  displayName: string;
-}
 
 // Simple in-memory cache
 class WeatherCache {
@@ -185,8 +149,6 @@ export async function fetchForecastData(city: string, units = "metric") {
 function processForecastData(data: any) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
-  // Process daily and hourly data in a single pass
   const dailyMap = new Map<string, any>();
   const hourlyByDay = new Map<string, HourlyForecast[]>();
 
@@ -197,7 +159,6 @@ function processForecastData(data: any) {
     const tempMax = round(item.main.temp_max);
     const tempMin = round(item.main.temp_min);
 
-    // Update daily data
     const existing = dailyMap.get(dayKey);
     if (!existing) {
       dailyMap.set(dayKey, {
@@ -212,7 +173,6 @@ function processForecastData(data: any) {
       existing.low = Math.min(existing.low, tempMin);
     }
 
-    // Add hourly data
     if (!hourlyByDay.has(dayKey)) {
       hourlyByDay.set(dayKey, []);
     }
@@ -228,13 +188,10 @@ function processForecastData(data: any) {
     }
   });
 
-  // Generate 7-day forecast
   const dailyForecast = generateDailyForecast(today, dailyMap);
 
-  // Generate hourly data by day
   const hourlyDataByDay = generateHourlyByDay(today, hourlyByDay);
 
-  // Get first 8 hours from API data for immediate hourly forecast
   const immediateHourly = data.list
     .slice(0, CONFIG.HOURLY_LIMIT)
     .map((item: any) => ({
@@ -334,8 +291,6 @@ function fillMissingHours(
   for (let i = 0; i < hoursNeeded; i++) {
     const nextTime = new Date(baseTime);
     nextTime.setHours(baseTime.getHours() + (i + 1) * 3);
-
-    // Add small temperature variation for realism
     const tempVariation = Math.floor(Math.random() * 5) - 2;
 
     hours.push({
@@ -373,7 +328,7 @@ export async function searchCities(query: string): Promise<CitySearchResult[]> {
         : `${city.name}, ${city.country}`,
     }));
 
-    cache.set(cacheKey, cities, 30 * 60 * 1000); // Cache for 30 minutes
+    cache.set(cacheKey, cities, 30 * 60 * 1000);
     return cities;
   } catch (error) {
     console.error("City search error:", error);
@@ -381,7 +336,6 @@ export async function searchCities(query: string): Promise<CitySearchResult[]> {
   }
 }
 
-// Export cache utilities for testing or manual cache management
 export const cacheUtils = {
   clear: () => cache.clear(),
   get: (key: string) => cache.get(key),

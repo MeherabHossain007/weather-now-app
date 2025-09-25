@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { useState, useRef, useEffect } from "react";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { searchCities } from "@/lib/weather-api";
 
@@ -91,7 +91,7 @@ export function WeatherSearch({
   };
 
   return (
-    <div className="relative max-w-md mx-auto">
+    <div className="relative max-w-2xl mx-auto">
       <form onSubmit={handleSubmit} className="flex gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -106,20 +106,20 @@ export function WeatherSearch({
               setShowSuggestions(true)
             }
             placeholder="Search for a place..."
-            className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-white transition-colors"
+            className="w-full pl-10 pr-4 py-3 bg-neutral-800 hover:bg-neutral-700 rounded-12 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-white transition-colors"
           />
 
           {showSuggestions && suggestions.length > 0 && (
             <div
               ref={suggestionsRef}
-              className="absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto"
+              className="absolute top-full left-0 right-0 mt-3 p-2 bg-neutral-800 border border-neutral-600 rounded-12 shadow-xl z-50 max-h-48 overflow-y-auto"
             >
               {suggestions.map((city, index) => (
                 <button
                   key={index}
                   type="button"
                   onClick={() => handleSuggestionClick(city)}
-                  className="w-full text-left px-4 py-3 text-white hover:bg-slate-700/50 transition-colors border-b border-slate-700 last:border-b-0"
+                  className="w-full text-left text-white px-2 py-2.5 cursor-pointer hover:bg-neutral-700 rounded-8 transition-colors"
                 >
                   {city.displayName}
                 </button>
@@ -129,23 +129,25 @@ export function WeatherSearch({
 
           {searchLoading && (
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-              <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+              <Loader className="w-4 h-4 animate-spin text-gray-400" />
             </div>
           )}
         </div>
         <Button
           type="submit"
           disabled={loading || !query.trim()}
-          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white rounded-lg font-medium transition-colors"
+          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 focus:outline-none focus:ring-2 focus:ring-blue-700 text-white rounded-lg font-medium transition-colors"
         >
           Search
         </Button>
       </form>
 
       {isSearching && (
-        <div className="flex items-center gap-2 mt-3 text-sm text-gray-400">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          <span>Search in progress</span>
+        <div className="absolute top-full left-0 right-0 mt-3 p-2 bg-neutral-800 border border-neutral-600 rounded-12 shadow-xl z-50 ">
+          <div className="flex items-center gap-2 text-white">
+            <Loader className="w-4 h-4 animate-spin" />
+            <span>Search in progress</span>
+          </div>
         </div>
       )}
     </div>

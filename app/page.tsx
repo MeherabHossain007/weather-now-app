@@ -1,18 +1,19 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { WeatherSearch } from "@/components/weather-search"
-import { WeatherDisplay } from "@/components/weather-display"
-import { WeatherStats } from "@/components/weather-stats"
-import { DailyForecast } from "@/components/daily-forecast"
-import { HourlyForecast } from "@/components/hourly-forecast"
-import { UnitsToggle } from "@/components/units-toggle"
-import { LoadingState } from "@/components/loading-state"
-import { ErrorState } from "@/components/error-state"
-import { EmptyState } from "@/components/empty-state"
-import { NoResultsState } from "@/components/no-results-state"
-import { WeatherIcon } from "@/components/weather-icon"
-import { useWeather } from "@/hooks/use-weather"
+import { useState, useCallback, useMemo } from "react";
+import Image from "next/image";
+import { WeatherSearch } from "@/components/weather-search";
+import { WeatherDisplay } from "@/components/weather-display";
+import { WeatherStats } from "@/components/weather-stats";
+import { DailyForecast } from "@/components/daily-forecast";
+import { HourlyForecast } from "@/components/hourly-forecast";
+import { UnitsToggle } from "@/components/ui/units-toggle";
+import { LoadingState } from "@/components/utilities/loading-state";
+import { ErrorState } from "@/components/errorState/error-state";
+import { EmptyState } from "@/components/errorState/empty-state";
+import { NoResultsState } from "@/components/errorState/no-results-state";
+import { useWeather } from "@/hooks/use-weather";
+
 
 export default function WeatherApp() {
   const {
@@ -24,61 +25,93 @@ export default function WeatherApp() {
     units,
     setUnits,
     searchWeather,
-    clearError,
     retrySearch,
-  } = useWeather()
+  } = useWeather();
 
-  const [hasSearched, setHasSearched] = useState(false)
+  const [hasSearched, setHasSearched] = useState(false);
 
-  const handleSearch = async (city: string) => {
-    setHasSearched(true)
-    await searchWeather(city)
-  }
+  const handleSearch = useCallback(
+    async (city: string) => {
+      setHasSearched(true);
+      await searchWeather(city);
+    },
+    [searchWeather]
+  );
+
+  const handleUnitsChange = useCallback(
+    (newUnits: typeof units) => {
+      setUnits(newUnits);
+    },
+    [setUnits]
+  );
+
+  const showEmptyState = useMemo(
+    () => !loading && !error && !hasSearched && !noResults,
+    [loading, error, hasSearched, noResults]
+  );
+
+  const showWeatherContent = useMemo(
+    () => !loading && !error && !noResults && weatherData && forecastData,
+    [loading, error, noResults, weatherData, forecastData]
+  );
+
+  const showNoResults = useMemo(
+    () => !loading && !error && noResults,
+    [loading, error, noResults]
+  );
+
+
+  const renderStateContent = () => {
+    if (loading) return <LoadingState />;
+    if (error) return <ErrorState message={error} onRetry={retrySearch} />;
+    if (showNoResults) return <NoResultsState />;
+    if (showEmptyState) return <EmptyState />;
+    if (showWeatherContent) return <WeatherContent />;
+    return null;
+  };
+
+  const WeatherContent = useCallback(() => {
+    if (!weatherData || !forecastData) return null;
+
+    return (
+      <div className="space-y-6">
+        <div className="lg:grid lg:grid-cols-3 gap-8 lg:items-start">
+          <div className="lg:col-span-2 flex flex-col gap-12 mb-6 lg:mb-0">
+            <WeatherDisplay weather={weatherData} units={units} />
+            <WeatherStats weather={weatherData} units={units} />
+            <DailyForecast forecast={forecastData} units={units} />
+          </div>
+          <div className="lg:col-span-1">
+            <HourlyForecast forecast={forecastData} units={units} />
+          </div>
+        </div>
+      </div>
+    );
+  }, [weatherData, forecastData, units]);
 
   return (
     <div className="min-h-screen lg:px-24 lg:py-12 text-white">
-      {/* Header */}
       <header className="flex items-center justify-between p-4 md:p-6">
         <div className="flex items-center gap-2">
-          <WeatherIcon alt="sunny" size="sm" icon={"01d"} />
-          <h1 className="text-xl font-semibold">Weather Now</h1>
+          <Image
+            src="/logo.svg"
+            alt="Weather App Logo"
+            height={200}
+            width={200}
+            priority
+          />
         </div>
-        <UnitsToggle units={units} onUnitsChange={setUnits} />
+        <UnitsToggle units={units} onUnitsChange={handleUnitsChange} />
       </header>
 
-      {/* Main Content */}
       <main className="px-4 md:px-6 pb-6">
-        {/* Hero Section */}
         <div className="text-center mb-8 md:mb-12">
-          <h2 className="text-3xl md:text-5xl font-bricolage font-bold mb-6 text-balance">
+          <h1 className="text-3xl md:text-5xl font-bricolage font-bold mb-16 text-balance">
             How's the sky looking today?
-          </h2>
+          </h1>
           <WeatherSearch onSearch={handleSearch} loading={loading} />
         </div>
-
-        {/* Content States */}
-        {loading && <LoadingState />}
-
-        {error && <ErrorState message={error} onRetry={retrySearch} />}
-
-        {!loading && !error && noResults && <NoResultsState />}
-
-        {!loading && !error && !hasSearched && !noResults && <EmptyState />}
-
-        {!loading && !error && !noResults && weatherData && forecastData && (
-          <div className="space-y-6">
-            <div className="lg:grid lg:grid-cols-3 gap-8 lg:items-start">
-              <div className="lg:col-span-2 flex flex-col gap-12 mb-6 lg:mb-0">
-                <WeatherDisplay weather={weatherData} units={units} />
-                <WeatherStats weather={weatherData} units={units} />
-                <DailyForecast forecast={forecastData} units={units} />
-              </div>
-              <div className="lg:col-span-1">
-                <HourlyForecast forecast={forecastData} units={units} />
-              </div>
-            </div>
-          </div>
-        )}
+        {renderStateContent()}
       </main>
     </div>
   );

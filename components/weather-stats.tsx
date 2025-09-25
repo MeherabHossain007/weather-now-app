@@ -1,38 +1,45 @@
-import type { WeatherData, Units } from "@/types/weather"
+"use client";
+import type { WeatherData, Units } from "@/types/weather";
+import { useMemo } from "react";
 
 interface WeatherStatsProps {
-  weather: WeatherData
-  units: Units
+  weather: WeatherData;
+  units: Units;
 }
 
+interface StatItem {
+  label: string;
+  value: string;
+}
+
+const UNIT_CONFIG = {
+  metric: { wind: "km/h", precipitation: "mm" },
+  imperial: { wind: "mph", precipitation: "in" },
+} as const;
+
 export function WeatherStats({ weather, units }: WeatherStatsProps) {
-  const getWindUnit = () => (units === "metric" ? "km/h" : "mph");
-  const getPrecipitationUnit = () => (units === "metric" ? "mm" : "in");
-  const getPrecipitation = () => `0 ${getPrecipitationUnit()}`;
+  const stats = useMemo((): StatItem[] => {
+    const unitConfig = UNIT_CONFIG[units];
+
+    return [
+      { label: "Feels Like", value: `${weather.feelsLike}°` },
+      { label: "Humidity", value: `${weather.humidity}%` },
+      { label: "Wind", value: `${weather.windSpeed} ${unitConfig.wind}` },
+      { label: "Precipitation", value: `0 ${unitConfig.precipitation}` },
+    ];
+  }, [weather.feelsLike, weather.humidity, weather.windSpeed, units]);
+
+  const baseClasses =
+    "bg-neutral-800 border border-neutral-600 rounded-12 p-5 flex flex-col gap-6";
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-      <div className="bg-neutral-800 border border-neutral-600 rounded-12 p-5 flex flex-col gap-6">
-        <p className="text-white text-lg mb-1">Feels Like</p>
-        <p className="text-3xl">{weather.feelsLike}°</p>
-      </div>
-
-      <div className="bg-neutral-800 border border-neutral-600 rounded-12 p-5 flex flex-col gap-6">
-        <p className="text-white text-lg mb-1">Humidity</p>
-        <p className="text-3xl">{weather.humidity}%</p>
-      </div>
-
-      <div className="bg-neutral-800 border border-neutral-600 rounded-12 p-5 flex flex-col gap-6">
-        <p className="text-white text-lg mb-1">Wind</p>
-        <p className="text-3xl">
-          {weather.windSpeed} {getWindUnit()}
-        </p>
-      </div>
-
-      <div className="bg-neutral-800 border border-neutral-600 rounded-12 p-5 flex flex-col gap-6">
-        <p className="text-white text-lg mb-1">Precipitation</p>
-        <p className="text-3xl">{getPrecipitation()}</p>
-      </div>
+      {stats.map(({ label, value }) => (
+        <div key={label} className={baseClasses}>
+          <p className="text-white text-lg mb-1">{label}</p>
+          <p className="text-3xl">{value}</p>
+        </div>
+      ))}
     </div>
-  )
+  );
 }

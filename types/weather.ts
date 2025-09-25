@@ -41,3 +41,17 @@ export interface ForecastData {
   hourly: HourlyForecast[];
   hourlyByDay: HourlyByDay[];
 }
+ export interface DayForecast {
+  date: string;
+  high: number;
+  low: number;
+  condition: string;
+  icon: string;
+}
+
+export interface CitySearchResult {
+  name: string;
+  country: string;
+  state?: string;
+  displayName: string;
+}
