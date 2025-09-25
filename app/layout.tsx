@@ -1,7 +1,6 @@
 import type React from "react";
 import type { Metadata } from "next";
 import { DM_Sans, Bricolage_Grotesque } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
 import { Suspense } from "react";
 import "./globals.css";
 
@@ -19,9 +18,8 @@ const bricolageGrotesque = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
-  title: "v0 App",
-  description: "Created with v0",
-  generator: "v0.app",
+  title: "Weather Now",
+  description: "Check the weather in your city",
 };
 
 export default function RootLayout({
@@ -36,7 +34,6 @@ export default function RootLayout({
     >
       <body className="min-h-screen bg-neutral-900 text-neutral-0 antialiased font-dm-sans">
         <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
-        <Analytics />
       </body>
     </html>
   );
