@@ -105,7 +105,7 @@ export default function WeatherApp() {
       </header>
       <main className="px-4 md:px-6 pb-6">
         <div className="text-center mb-8 md:mb-12">
-          <h1 className="text-5xl font-bricolage font-bold my-16 text-balance">
+          <h1 className="text-5xl font-bricolage font-bold my-16 md:my-10 md:pb-5 text-balance">
             How's the sky looking today?
           </h1>
           <WeatherSearch onSearch={handleSearch} loading={loading} />
