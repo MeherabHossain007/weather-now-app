@@ -7,6 +7,7 @@ A responsive weather application built with Next.js that provides real-time weat
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 18+
 - npm, yarn, or pnpm
 - OpenWeatherMap API key
@@ -14,6 +15,7 @@ A responsive weather application built with Next.js that provides real-time weat
 ### Installation
 
 1. **Clone and install**
+
    ```bash
    git clone <repository-url>
    cd weather-now-app
@@ -22,11 +24,13 @@ A responsive weather application built with Next.js that provides real-time weat
 
 2. **Environment Setup**
    Create a `.env` file in the root directory:
+
    ```env
    NEXT_PUBLIC_OPENWEATHER_API_KEY=9d729cfd40c256defac28e6a8266b774
-   > ⚠️ **Warning**: The API key shown above is for testing purposes only. In a real application, you must use your own OpenWeatherMap API key—do not use the example key provided here.
    ```
-   
+
+   > ⚠️ **Warning**: The API key shown above is for testing purposes only. In a real application, you must use your own OpenWeatherMap API key—do not use the example key provided here.
+
    > **Get your API key**: Sign up at [OpenWeatherMap](https://openweathermap.org/api) and get your free API key from the dashboard.
 
 3. **Run the app**
@@ -82,6 +86,7 @@ A responsive weather application built with Next.js that provides real-time weat
 ## 🌐 API Configuration
 
 The app uses OpenWeatherMap API endpoints:
+
 - Current weather: `/weather?q={city}&appid={API_KEY}&units=metric`
 - 5-day forecast: `/forecast?q={city}&appid={API_KEY}&units=metric`
 
@@ -90,12 +95,15 @@ Update `lib/weather-api.ts` to use your API key from environment variables.
 ## 🚀 Deployment
 
 ### Vercel (Recommended)
+
 ```bash
 npx vercel
 ```
+
 Add your `NEXT_PUBLIC_WEATHER_API_KEY` in Vercel's environment variables.
 
 ### Build for Production
+
 ```bash
 npm run build
 npm start
@@ -103,14 +111,14 @@ npm start
 
 ## 🔧 Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `NEXT_PUBLIC_WEATHER_API_KEY` | Your OpenWeatherMap API key | Yes |
+| Variable                      | Description                 | Required |
+| ----------------------------- | --------------------------- | -------- |
+| `NEXT_PUBLIC_WEATHER_API_KEY` | Your OpenWeatherMap API key | Yes      |
 
 ## 🎯 Browser Support
 
 - Chrome (latest)
-- Firefox (latest)  
+- Firefox (latest)
 - Safari (latest)
 - Edge (latest)
 
