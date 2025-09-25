@@ -94,7 +94,7 @@ export default function WeatherApp() {
       <header className="flex items-center justify-between p-4 md:p-6">
         <div className="flex items-center gap-2">
           <Image
-            src="/logo.svg"
+            src="/Logo.svg"
             alt="Weather App Logo"
             height={200}
             width={200}
