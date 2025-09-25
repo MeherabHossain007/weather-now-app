@@ -98,7 +98,6 @@ export default function WeatherApp() {
             alt="Weather App Logo"
             height={200}
             width={200}
-            priority
           />
         </div>
         <UnitsToggle units={units} onUnitsChange={handleUnitsChange} />
