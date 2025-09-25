@@ -105,8 +105,10 @@
   --color-blue-500: #4658d9;
   --color-blue-700: #2b1b9c;
 
+  /* Font families including italic support */
   --font-dm-sans: var(--font-dm-sans);
   --font-bricolage: var(--font-bricolage-grotesque);
+  --font-sans: var(--font-dm-sans);
 
   /* Adding design system spacing scale */
   --spacing-0: 0px;
@@ -186,5 +188,13 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
+  }
+}
+
+/* Utility classes for italic text */
+@layer utilities {
+  .font-dm-sans-italic {
+    font-family: var(--font-dm-sans);
+    font-style: italic;
   }
 }

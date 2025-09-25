@@ -16,8 +16,8 @@ export function DailyForecast({ forecast }: DailyForecastProps) {
 
   return (
     <div>
-      <h3 className="text-xl font-semibold mb-4">Daily forecast</h3>
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+      <h3 className="text-xl font-semibold mb-5">Daily forecast</h3>
+      <div className="grid grid-cols-2 md:grid-cols-7 gap-4">
         {forecast.daily.map((day, index) => (
           <div
             key={index}
@@ -25,9 +25,9 @@ export function DailyForecast({ forecast }: DailyForecastProps) {
           >
             <p className="text-white text-lg mb-3">{formatDay(day.date)}</p>
             <div className="flex justify-center mb-3">
-              <WeatherIcon condition={day.condition} size='xl' />
+              <WeatherIcon condition={day.condition} size='lg' />
             </div>
-            <div className=" flex justify-between items-center px-4 pb-4">
+            <div className=" flex justify-between items-center">
               <p className="font-semibold text-base">{day.high}°</p>
               <p className="font-semibold text-base">{day.low}°</p>
             </div>

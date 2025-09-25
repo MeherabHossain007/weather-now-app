@@ -36,7 +36,7 @@ export default function WeatherApp() {
   }
 
   return (
-    <div className="min-h-screen text-white">
+    <div className="min-h-screen lg:px-24 lg:py-12 text-white">
       {/* Header */}
       <header className="flex items-center justify-between p-4 md:p-6">
         <div className="flex items-center gap-2">
@@ -67,10 +67,10 @@ export default function WeatherApp() {
 
         {!loading && !error && !noResults && weatherData && forecastData && (
           <div className="space-y-6">
-            <WeatherDisplay weather={weatherData} units={units} />
-            <WeatherStats weather={weatherData} units={units} />
-            <div className="lg:grid lg:grid-cols-3 lg:gap-6 lg:items-start">
-              <div className="lg:col-span-2 mb-6 lg:mb-0">
+            <div className="lg:grid lg:grid-cols-3 gap-8 lg:items-start">
+              <div className="lg:col-span-2 flex flex-col gap-12 mb-6 lg:mb-0">
+                <WeatherDisplay weather={weatherData} units={units} />
+                <WeatherStats weather={weatherData} units={units} />
                 <DailyForecast forecast={forecastData} units={units} />
               </div>
               <div className="lg:col-span-1">

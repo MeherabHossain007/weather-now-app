@@ -11,27 +11,27 @@ export function WeatherStats({ weather, units }: WeatherStatsProps) {
   const getPrecipitation = () => `0 ${getPrecipitationUnit()}`;
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <div className="bg-neutral-800 border border-neutral-600 rounded-12 p-4">
-        <p className="text-gray-400 text-sm mb-1">Feels Like</p>
-        <p className="text-2xl font-semibold">{weather.feelsLike}°</p>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="bg-neutral-800 border border-neutral-600 rounded-12 p-5 flex flex-col gap-6">
+        <p className="text-white text-lg mb-1">Feels Like</p>
+        <p className="text-3xl">{weather.feelsLike}°</p>
       </div>
 
-      <div className="bg-neutral-800 border border-neutral-600 rounded-12 p-4">
-        <p className="text-gray-400 text-sm mb-1">Humidity</p>
-        <p className="text-2xl font-semibold">{weather.humidity}%</p>
+      <div className="bg-neutral-800 border border-neutral-600 rounded-12 p-5 flex flex-col gap-6">
+        <p className="text-white text-lg mb-1">Humidity</p>
+        <p className="text-3xl">{weather.humidity}%</p>
       </div>
 
-      <div className="bg-neutral-800 border border-neutral-600 rounded-12 p-4">
-        <p className="text-gray-400 text-sm mb-1">Wind</p>
-        <p className="text-2xl font-semibold">
+      <div className="bg-neutral-800 border border-neutral-600 rounded-12 p-5 flex flex-col gap-6">
+        <p className="text-white text-lg mb-1">Wind</p>
+        <p className="text-3xl">
           {weather.windSpeed} {getWindUnit()}
         </p>
       </div>
 
-      <div className="bg-neutral-800 border border-neutral-600 rounded-12 p-4">
-        <p className="text-gray-400 text-sm mb-1">Precipitation</p>
-        <p className="text-2xl font-semibold">{getPrecipitation()}</p>
+      <div className="bg-neutral-800 border border-neutral-600 rounded-12 p-5 flex flex-col gap-6">
+        <p className="text-white text-lg mb-1">Precipitation</p>
+        <p className="text-3xl">{getPrecipitation()}</p>
       </div>
     </div>
   )
