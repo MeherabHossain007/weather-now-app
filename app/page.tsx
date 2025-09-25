@@ -40,7 +40,7 @@ export default function WeatherApp() {
       {/* Header */}
       <header className="flex items-center justify-between p-4 md:p-6">
         <div className="flex items-center gap-2">
-          <WeatherIcon condition="sunny" size="sm" />
+          <WeatherIcon alt="sunny" size="sm" icon={"01d"} />
           <h1 className="text-xl font-semibold">Weather Now</h1>
         </div>
         <UnitsToggle units={units} onUnitsChange={setUnits} />

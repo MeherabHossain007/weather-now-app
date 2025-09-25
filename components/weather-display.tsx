@@ -38,26 +38,25 @@ export function WeatherDisplay({ weather, units }: WeatherDisplayProps) {
       ></div>
       <div className="absolute inset-0 bg-gradient-to-br from-blue-600/30 to-purple-700/30"></div>
       <div className="relative h-full flex flex-col justify-center">
-              <div className="relative z-10 flex items-center justify-between">
-        <div>
-          <h3 className="text-2xl md:text-3xl font-bold mb-2 text-white drop-shadow-lg">
-            {weather.name}, {weather.country}
-          </h3>
-          <p className="text-white font-dm-sans text-lg drop-shadow-md">
-            {formatDate(weather.timestamp)}
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <WeatherIcon condition={weather.condition} size="xl" />
-          <div className="text-right">
-            <div className="text-5xl md:text-8xl font-bold font-dm-sans-italic text-white drop-shadow-lg">
-              {weather.temperature}°
+        <div className="relative flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col justify-center items-center md:justify-start md:items-start gap-3">
+            <h3 className="text-3xl font-bold mb-2 text-white drop-shadow-lg">
+              {weather.name}, {weather.country}
+            </h3>
+            <p className="text-white font-dm-sans text-lg drop-shadow-md">
+              {formatDate(weather.timestamp)}
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <WeatherIcon alt={weather.condition} size="xl" icon={weather.icon} />
+            <div className="text-right">
+              <div className="text-8xl font-bold font-dm-sans-italic text-white drop-shadow-lg">
+                {weather.temperature}°
+              </div>
             </div>
           </div>
         </div>
       </div>
-      </div>
-
     </div>
   );
 }

@@ -25,7 +25,7 @@ export function DailyForecast({ forecast }: DailyForecastProps) {
           >
             <p className="text-white text-lg mb-3">{formatDay(day.date)}</p>
             <div className="flex justify-center mb-3">
-              <WeatherIcon condition={day.condition} size='lg' />
+              <WeatherIcon alt={day.condition} size='lg' icon={day.icon} />
             </div>
             <div className=" flex justify-between items-center">
               <p className="font-semibold text-base">{day.high}°</p>

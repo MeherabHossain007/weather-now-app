@@ -85,7 +85,7 @@ export function HourlyForecast({ forecast }: HourlyForecastProps) {
             >
               <div className="flex items-center gap-4">
                 <div className="flex items-center justify-center">
-                  <WeatherIcon condition={hour.condition} size="md" />
+                  <WeatherIcon alt={hour.condition} size="md" icon={hour.icon} />
                 </div>
                 <span className="text-white font-medium text-xl">
                   {formatTime(hour.time)}
