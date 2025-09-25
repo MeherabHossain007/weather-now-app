@@ -36,7 +36,7 @@ export default function WeatherApp() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 text-white">
+    <div className="min-h-screen text-white">
       {/* Header */}
       <header className="flex items-center justify-between p-4 md:p-6">
         <div className="flex items-center gap-2">
@@ -50,7 +50,9 @@ export default function WeatherApp() {
       <main className="px-4 md:px-6 pb-6">
         {/* Hero Section */}
         <div className="text-center mb-8 md:mb-12">
-          <h2 className="text-3xl md:text-5xl font-bold mb-6 text-balance">How's the sky looking today?</h2>
+          <h2 className="text-3xl md:text-5xl font-bricolage font-bold mb-6 text-balance">
+            How's the sky looking today?
+          </h2>
           <WeatherSearch onSearch={handleSearch} loading={loading} />
         </div>
 
@@ -65,20 +67,12 @@ export default function WeatherApp() {
 
         {!loading && !error && !noResults && weatherData && forecastData && (
           <div className="space-y-6">
-            {/* Current Weather */}
             <WeatherDisplay weather={weatherData} units={units} />
-
-            {/* Weather Stats */}
             <WeatherStats weather={weatherData} units={units} />
-
-            {/* Desktop Layout */}
             <div className="lg:grid lg:grid-cols-3 lg:gap-6 lg:items-start">
-              {/* Daily Forecast */}
               <div className="lg:col-span-2 mb-6 lg:mb-0">
                 <DailyForecast forecast={forecastData} units={units} />
               </div>
-
-              {/* Hourly Forecast */}
               <div className="lg:col-span-1">
                 <HourlyForecast forecast={forecastData} units={units} />
               </div>
@@ -87,5 +81,5 @@ export default function WeatherApp() {
         )}
       </main>
     </div>
-  )
+  );
 }

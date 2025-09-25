@@ -4,6 +4,24 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* Weather Now Design System Colors */
+  /* Neutral Colors */
+  --neutral-900: #020d2c;
+  --neutral-800: #262540;
+  --neutral-700: #302f4a;
+  --neutral-600: #3c3b5f;
+  --neutral-300: #acac87;
+  --neutral-200: #d4d3d9;
+  --neutral-0: #ffffff;
+
+  /* Orange */
+  --orange-500: #ff820a;
+
+  /* Blue */
+  --blue-500: #4658d9;
+  --blue-700: #2b1b9c;
+
+  /* Design System Tokens */
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -74,8 +92,56 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
-@theme inline {
-  /* optional: --font-sans, --font-serif, --font-mono if they are applied in the layout.tsx */
+@theme {
+  /* Design System Colors */
+  --color-neutral-900: #020d2c;
+  --color-neutral-800: #262540;
+  --color-neutral-700: #302f4a;
+  --color-neutral-600: #3c3b5f;
+  --color-neutral-300: #acac87;
+  --color-neutral-200: #d4d3d9;
+  --color-neutral-0: #ffffff;
+  --color-orange-500: #ff820a;
+  --color-blue-500: #4658d9;
+  --color-blue-700: #2b1b9c;
+
+  --font-dm-sans: var(--font-dm-sans);
+  --font-bricolage: var(--font-bricolage-grotesque);
+
+  /* Adding design system spacing scale */
+  --spacing-0: 0px;
+  --spacing-025: 2px;
+  --spacing-050: 4px;
+  --spacing-075: 6px;
+  --spacing-100: 8px;
+  --spacing-125: 10px;
+  --spacing-150: 12px;
+  --spacing-200: 16px;
+  --spacing-250: 20px;
+  --spacing-300: 24px;
+  --spacing-400: 32px;
+  --spacing-500: 40px;
+  --spacing-600: 48px;
+  --spacing-800: 64px;
+  --spacing-1000: 80px;
+  --spacing-1200: 96px;
+  --spacing-1400: 112px;
+  --spacing-1600: 128px;
+  --spacing-1800: 140px;
+
+  /* Adding design system border radius scale */
+  --radius-0: 0px;
+  --radius-4: 4px;
+  --radius-6: 6px;
+  --radius-8: 8px;
+  --radius-10: 10px;
+  --radius-12: 12px;
+  --radius-16: 16px;
+  --radius-20: 20px;
+  --radius-24: 24px;
+  --radius-full: 999px;
+
+  /* Semantic Colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -119,6 +185,6 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
   }
 }

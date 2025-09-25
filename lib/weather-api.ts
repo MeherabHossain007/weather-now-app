@@ -1,17 +1,24 @@
-const API_KEY = "9d729cfd40c256defac28e6a8266b774"
-const BASE_URL = "https://api.openweathermap.org/data/2.5"
+const API_KEY = "9d729cfd40c256defac28e6a8266b774";
+const BASE_URL = "https://api.openweathermap.org/data/2.5";
+const GEO_URL = "https://api.openweathermap.org/geo/1.0";
 
 export async function fetchWeatherData(city: string, units: string) {
-  const response = await fetch(`${BASE_URL}/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=${units}`)
+  const response = await fetch(
+    `${BASE_URL}/weather?q=${encodeURIComponent(
+      city
+    )}&appid=${API_KEY}&units=${units}`
+  );
 
   if (!response.ok) {
     if (response.status === 404) {
-      throw new Error("City not found. Please check the spelling and try again.")
+      throw new Error(
+        "City not found. Please check the spelling and try again."
+      );
     }
-    throw new Error("Failed to fetch weather data")
+    throw new Error("Failed to fetch weather data");
   }
 
-  const data = await response.json()
+  const data = await response.json();
 
   return {
     id: data.id,
@@ -26,38 +33,43 @@ export async function fetchWeatherData(city: string, units: string) {
     description: data.weather[0].description,
     icon: data.weather[0].icon,
     timestamp: Date.now(),
-  }
+  };
 }
 
 export async function fetchForecastData(city: string, units: string) {
-  const response = await fetch(`${BASE_URL}/forecast?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=${units}`)
+  const response = await fetch(
+    `${BASE_URL}/forecast?q=${encodeURIComponent(
+      city
+    )}&appid=${API_KEY}&units=${units}`
+  );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch forecast data")
+    throw new Error("Failed to fetch forecast data");
   }
 
-  const data = await response.json()
+  const data = await response.json();
 
   // Process daily forecast (group by day)
-  const dailyMap = new Map()
+  const dailyMap = new Map();
   data.list.forEach((item: any) => {
-    const date = new Date(item.dt * 1000)
-    const dayKey = date.toDateString()
+    const date = new Date(item.dt * 1000);
+    const dayKey = date.toDateString();
+    const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
 
     if (!dailyMap.has(dayKey)) {
       dailyMap.set(dayKey, {
-        date: dayKey,
+        date: dayName,
         high: Math.round(item.main.temp_max),
         low: Math.round(item.main.temp_min),
         condition: item.weather[0].main.toLowerCase(),
         icon: item.weather[0].icon,
-      })
+      });
     } else {
-      const existing = dailyMap.get(dayKey)
-      existing.high = Math.max(existing.high, Math.round(item.main.temp_max))
-      existing.low = Math.min(existing.low, Math.round(item.main.temp_min))
+      const existing = dailyMap.get(dayKey);
+      existing.high = Math.max(existing.high, Math.round(item.main.temp_max));
+      existing.low = Math.min(existing.low, Math.round(item.main.temp_min));
     }
-  })
+  });
 
   // Process hourly forecast (next 24 hours)
   const hourlyForecast = data.list.slice(0, 8).map((item: any) => ({
@@ -65,10 +77,33 @@ export async function fetchForecastData(city: string, units: string) {
     temperature: Math.round(item.main.temp),
     condition: item.weather[0].main.toLowerCase(),
     icon: item.weather[0].icon,
-  }))
+  }));
 
   return {
     daily: Array.from(dailyMap.values()).slice(0, 7),
     hourly: hourlyForecast,
+  };
+}
+
+export async function searchCities(query: string) {
+  if (!query.trim()) return [];
+
+  const response = await fetch(
+    `${GEO_URL}/direct?q=${encodeURIComponent(query)}&limit=5&appid=${API_KEY}`
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to search cities");
   }
+
+  const data = await response.json();
+
+  return data.map((city: any) => ({
+    name: city.name,
+    country: city.country,
+    state: city.state,
+    displayName: city.state
+      ? `${city.name}, ${city.state}, ${city.country}`
+      : `${city.name}, ${city.country}`,
+  }));
 }
