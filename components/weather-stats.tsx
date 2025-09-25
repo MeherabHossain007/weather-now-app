@@ -6,8 +6,9 @@ interface WeatherStatsProps {
 }
 
 export function WeatherStats({ weather, units }: WeatherStatsProps) {
-  const getWindUnit = () => (units === "metric" ? "km/h" : "mph")
-  const getPrecipitation = () => "0 mm"
+  const getWindUnit = () => (units === "metric" ? "km/h" : "mph");
+  const getPrecipitationUnit = () => (units === "metric" ? "mm" : "in");
+  const getPrecipitation = () => `0 ${getPrecipitationUnit()}`;
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

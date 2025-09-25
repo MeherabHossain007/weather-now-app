@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { WeatherData, ForecastData, Units } from "@/types/weather";
 import { fetchWeatherData, fetchForecastData } from "@/lib/weather-api";
 
@@ -11,6 +11,7 @@ export function useWeather() {
   const [error, setError] = useState<string | null>(null);
   const [noResults, setNoResults] = useState(false);
   const [units, setUnits] = useState<Units>("metric");
+  const [lastSearchedCity, setLastSearchedCity] = useState<string | null>(null);
 
   const searchWeather = useCallback(
     async (city: string) => {
@@ -19,6 +20,7 @@ export function useWeather() {
       setLoading(true);
       setError(null);
       setNoResults(false);
+      setLastSearchedCity(city);
 
       try {
         const [weather, forecast] = await Promise.all([
@@ -49,6 +51,12 @@ export function useWeather() {
     },
     [units]
   );
+
+  useEffect(() => {
+    if (lastSearchedCity && weatherData) {
+      searchWeather(lastSearchedCity);
+    }
+  }, [units]);
 
   const clearError = useCallback(() => {
     setError(null);

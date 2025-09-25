@@ -1,7 +1,7 @@
 interface WeatherIconProps {
   condition: string;
   icon_code?: string;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
 }
 
 export function WeatherIcon({
@@ -13,12 +13,12 @@ export function WeatherIcon({
     sm: "w-6 h-6",
     md: "w-8 h-8",
     lg: "w-12 h-12",
+    xl: "w-16 h-16",
   };
 
   const getIconCode = () => {
     if (icon_code) return icon_code;
 
-    // Fallback mapping from condition to icon code (defaulting to day icons)
     switch (condition.toLowerCase()) {
       case "clear":
       case "sunny":
