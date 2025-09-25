@@ -1,43 +1,62 @@
-import { Sun, Cloud, CloudRain, CloudSnow, Zap, CloudDrizzle, Eye, Wind } from "lucide-react"
-
 interface WeatherIconProps {
-  condition: string
-  size?: "sm" | "md" | "lg"
+  condition: string;
+  icon_code?: string;
+  size?: "sm" | "md" | "lg";
 }
 
-export function WeatherIcon({ condition, size = "md" }: WeatherIconProps) {
+export function WeatherIcon({
+  condition,
+  icon_code,
+  size = "md",
+}: WeatherIconProps) {
   const sizeClasses = {
     sm: "w-6 h-6",
     md: "w-8 h-8",
     lg: "w-12 h-12",
-  }
+  };
 
-  const getIcon = () => {
+  const getIconCode = () => {
+    if (icon_code) return icon_code;
+
+    // Fallback mapping from condition to icon code (defaulting to day icons)
     switch (condition.toLowerCase()) {
       case "clear":
       case "sunny":
-        return <Sun className={`${sizeClasses[size]} text-yellow-400`} />
+        return "01d";
+      case "few clouds":
+        return "02d";
+      case "scattered clouds":
+        return "03d";
       case "clouds":
       case "cloudy":
-        return <Cloud className={`${sizeClasses[size]} text-gray-300`} />
-      case "rain":
+      case "broken clouds":
+        return "04d";
       case "shower rain":
-        return <CloudRain className={`${sizeClasses[size]} text-blue-400`} />
+        return "09d";
+      case "rain":
+        return "10d";
       case "drizzle":
-        return <CloudDrizzle className={`${sizeClasses[size]} text-blue-300`} />
+        return "10d";
       case "thunderstorm":
-        return <Zap className={`${sizeClasses[size]} text-yellow-500`} />
+        return "11d";
       case "snow":
-        return <CloudSnow className={`${sizeClasses[size]} text-white`} />
+        return "13d";
       case "mist":
       case "fog":
-        return <Eye className={`${sizeClasses[size]} text-gray-400`} />
-      case "wind":
-        return <Wind className={`${sizeClasses[size]} text-gray-400`} />
+        return "50d";
       default:
-        return <Sun className={`${sizeClasses[size]} text-yellow-400`} />
+        return "01d";
     }
-  }
+  };
 
-  return getIcon()
+  const iconCode = getIconCode();
+  const iconUrl = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+
+  return (
+    <img
+      src={iconUrl}
+      alt={condition}
+      className={`${sizeClasses[size]} object-contain`}
+    />
+  );
 }
