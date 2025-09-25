@@ -21,9 +21,10 @@ A responsive weather application built with Next.js that provides real-time weat
    ```
 
 2. **Environment Setup**
-   Create a `.env.local` file in the root directory:
+   Create a `.env` file in the root directory:
    ```env
    NEXT_PUBLIC_OPENWEATHER_API_KEY=9d729cfd40c256defac28e6a8266b774
+   > ⚠️ **Warning**: The API key shown above is for testing purposes only. In a real application, you must use your own OpenWeatherMap API key—do not use the example key provided here.
    ```
    
    > **Get your API key**: Sign up at [OpenWeatherMap](https://openweathermap.org/api) and get your free API key from the dashboard.
