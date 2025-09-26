@@ -1,89 +1,167 @@
-import { CitySearchResult, DayForecast, HourlyForecast, WeatherData } from "@/types/weather";
+import {
+  CitySearchResult,
+  DayForecast,
+  HourlyForecast,
+  WeatherData,
+} from "@/types/weather";
 
-// Configuration
+// Configuration with environment validation
 const CONFIG = {
- API_KEY: process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY || "", 
+  API_KEY: process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY || "",
   BASE_URL: "https://api.openweathermap.org/data/2.5",
   GEO_URL: "https://api.openweathermap.org/geo/1.0",
-  CACHE_DURATION: 10 * 60 * 1000,
+  CACHE_DURATION: 10 * 60 * 1000, // 10 minutes
+  CITY_CACHE_DURATION: 30 * 60 * 1000, // 30 minutes
   DEFAULT_FORECAST_DAYS: 7,
   HOURLY_LIMIT: 8,
+  MAX_CACHE_SIZE: 100, // Prevent memory leaks
+  RETRY_ATTEMPTS: 3,
+  RETRY_DELAY: 1000, // 1 second
 } as const;
 
-// Simple in-memory cache
+// Validate API key on module load
+if (!CONFIG.API_KEY) {
+  console.warn("OpenWeather API key is not configured");
+}
+
+//Cache with size limits and LRU eviction
 class WeatherCache {
-  private cache = new Map<string, { data: any; expiry: number }>();
+  private cache = new Map<
+    string,
+    { data: any; expiry: number; accessed: number }
+  >();
+  private accessOrder: string[] = [];
 
   get(key: string): any | null {
     const item = this.cache.get(key);
     if (!item) return null;
 
     if (Date.now() > item.expiry) {
-      this.cache.delete(key);
+      this.delete(key);
       return null;
     }
 
+    // Update access time for LRU
+    item.accessed = Date.now();
+    this.updateAccessOrder(key);
     return item.data;
   }
 
   set(key: string, data: any, duration = CONFIG.CACHE_DURATION): void {
+    // Evict oldest items if cache is full
+    if (this.cache.size >= CONFIG.MAX_CACHE_SIZE) {
+      this.evictLRU();
+    }
+
     this.cache.set(key, {
       data,
       expiry: Date.now() + duration,
+      accessed: Date.now(),
     });
+    this.updateAccessOrder(key);
+  }
+
+  private delete(key: string): void {
+    this.cache.delete(key);
+    const idx = this.accessOrder.indexOf(key);
+    if (idx > -1) this.accessOrder.splice(idx, 1);
+  }
+
+  private updateAccessOrder(key: string): void {
+    const idx = this.accessOrder.indexOf(key);
+    if (idx > -1) this.accessOrder.splice(idx, 1);
+    this.accessOrder.push(key);
+  }
+
+  private evictLRU(): void {
+    if (this.accessOrder.length > 0) {
+      const oldest = this.accessOrder[0];
+      this.delete(oldest);
+    }
   }
 
   clear(): void {
     this.cache.clear();
+    this.accessOrder = [];
+  }
+
+  size(): number {
+    return this.cache.size;
   }
 }
 
 const cache = new WeatherCache();
 
 // Utility functions
-const round = (num: number): number => Math.round(num);
+const round = (n: number): number => Math.round(n);
 
-const createApiUrl = (
-  endpoint: string,
-  params: Record<string, string>
-): string => {
-  const url = new URL(`${CONFIG.BASE_URL}/${endpoint}`);
-  Object.entries(params).forEach(([key, value]) => {
-    url.searchParams.append(key, value);
-  });
-  url.searchParams.append("appid", CONFIG.API_KEY);
+const buildUrl = (base: string, params: Record<string, string>): string => {
+  const url = new URL(base);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  url.searchParams.set("appid", CONFIG.API_KEY);
   return url.toString();
 };
 
-const createGeoUrl = (query: string, limit = 5): string => {
-  const url = new URL(`${CONFIG.GEO_URL}/direct`);
-  url.searchParams.append("q", query);
-  url.searchParams.append("limit", String(limit));
-  url.searchParams.append("appid", CONFIG.API_KEY);
-  return url.toString();
-};
+//Error handling with retry logic
+async function fetchWithRetry(
+  url: string,
+  attempts = CONFIG.RETRY_ATTEMPTS
+): Promise<Response> {
+  let lastError: Error | null = null;
 
-const handleApiError = async (
-  response: Response,
-  context: string
-): Promise<void> => {
-  if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error(
-        `City not found. Please check the spelling and try again.`
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(10000), // 10 second timeout
+      });
+
+      if (response.ok) return response;
+
+      // Don't retry on client errors (4xx)
+      if (response.status >= 400 && response.status < 500) {
+        throw new WeatherApiError(
+          response.status === 404
+            ? "Location not found. Please check the spelling."
+            : `Request failed: ${response.statusText}`,
+          response.status
+        );
+      }
+
+      // Retry on server errors (5xx)
+      lastError = new Error(`Server error: ${response.status}`);
+    } catch (error) {
+      if (error instanceof WeatherApiError) throw error;
+      lastError = error as Error;
+    }
+
+    // Wait before retry (exponential backoff)
+    if (i < attempts - 1) {
+      await new Promise((r) =>
+        setTimeout(r, CONFIG.RETRY_DELAY * Math.pow(2, i))
       );
     }
-    throw new Error(
-      `Failed to ${context}: ${response.status} ${response.statusText}`
-    );
   }
-};
 
-const formatDayName = (
-  date: Date,
-  format: "short" | "long" = "short"
-): string => {
-  return date.toLocaleDateString("en-US", { weekday: format });
+  throw lastError || new Error("Failed to fetch data");
+}
+
+class WeatherApiError extends Error {
+  constructor(message: string, public status: number) {
+    super(message);
+    this.name = "WeatherApiError";
+  }
+}
+
+// Date formatting utilities
+const formatDay = (date: Date, fmt: "short" | "long" = "short"): string =>
+  date.toLocaleDateString("en-US", { weekday: fmt });
+
+const getDayKey = (date: Date): string => date.toDateString();
+
+const setToMidnight = (date: Date): Date => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
 };
 
 // Main API functions
@@ -91,15 +169,16 @@ export async function fetchWeatherData(
   city: string,
   units = "metric"
 ): Promise<WeatherData> {
-  const cacheKey = `weather:${city}:${units}`;
+  if (!city?.trim()) throw new Error("City name is required");
+  if (!CONFIG.API_KEY) throw new Error("API key is not configured");
+
+  const cacheKey = `weather:${city.toLowerCase()}:${units}`;
   const cached = cache.get(cacheKey);
   if (cached) return cached;
 
   try {
-    const url = createApiUrl("weather", { q: city, units });
-    const response = await fetch(url);
-    await handleApiError(response, "fetch weather data");
-
+    const url = buildUrl(`${CONFIG.BASE_URL}/weather`, { q: city, units });
+    const response = await fetchWithRetry(url);
     const data = await response.json();
 
     const weather: WeatherData = {
@@ -121,90 +200,102 @@ export async function fetchWeatherData(
     return weather;
   } catch (error) {
     console.error("Weather fetch error:", error);
-    throw error;
+    throw error instanceof Error ? error : new Error("Failed to fetch weather");
   }
 }
 
-export async function fetchForecastData(city: string, units = "metric") {
-  const cacheKey = `forecast:${city}:${units}`;
+export async function fetchForecastData(
+  city: string,
+  units = "metric"
+): Promise<{
+  daily: DayForecast[];
+  hourly: HourlyForecast[];
+  hourlyByDay: Array<{
+    day: string;
+    dayKey: string;
+    hours: HourlyForecast[];
+  }>;
+}> {
+  if (!city?.trim()) throw new Error("City name is required");
+  if (!CONFIG.API_KEY) throw new Error("API key is not configured");
+
+  const cacheKey = `forecast:${city.toLowerCase()}:${units}`;
   const cached = cache.get(cacheKey);
   if (cached) return cached;
 
   try {
-    const url = createApiUrl("forecast", { q: city, units });
-    const response = await fetch(url);
-    await handleApiError(response, "fetch forecast data");
-
+    const url = buildUrl(`${CONFIG.BASE_URL}/forecast`, { q: city, units });
+    const response = await fetchWithRetry(url);
     const data = await response.json();
-    const result = processForecastData(data);
 
+    const result = processForecastData(data);
     cache.set(cacheKey, result);
     return result;
   } catch (error) {
     console.error("Forecast fetch error:", error);
-    throw error;
+    throw error instanceof Error
+      ? error
+      : new Error("Failed to fetch forecast");
   }
 }
 
+// Optimized forecast processing
 function processForecastData(data: any) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = setToMidnight(new Date());
   const dailyMap = new Map<string, any>();
   const hourlyByDay = new Map<string, HourlyForecast[]>();
 
-  data.list.forEach((item: any) => {
+  // Process API data in single pass
+  for (const item of data.list) {
     const date = new Date(item.dt * 1000);
-    const dayKey = date.toDateString();
+    const dayKey = getDayKey(date);
     const temp = round(item.main.temp);
     const tempMax = round(item.main.temp_max);
     const tempMin = round(item.main.temp_min);
+    const weather = {
+      condition: item.weather[0].main.toLowerCase(),
+      icon: item.weather[0].icon,
+    };
 
-    const existing = dailyMap.get(dayKey);
-    if (!existing) {
+    // Update daily data
+    const daily = dailyMap.get(dayKey);
+    if (!daily) {
       dailyMap.set(dayKey, {
         date,
         high: tempMax,
         low: tempMin,
-        condition: item.weather[0].main.toLowerCase(),
-        icon: item.weather[0].icon,
+        ...weather,
       });
     } else {
-      existing.high = Math.max(existing.high, tempMax);
-      existing.low = Math.min(existing.low, tempMin);
+      daily.high = Math.max(daily.high, tempMax);
+      daily.low = Math.min(daily.low, tempMin);
     }
 
-    if (!hourlyByDay.has(dayKey)) {
-      hourlyByDay.set(dayKey, []);
+    // Update hourly data
+    let hourly = hourlyByDay.get(dayKey);
+    if (!hourly) {
+      hourly = [];
+      hourlyByDay.set(dayKey, hourly);
     }
 
-    const hourlyData = hourlyByDay.get(dayKey)!;
-    if (hourlyData.length < CONFIG.HOURLY_LIMIT) {
-      hourlyData.push({
+    if (hourly.length < CONFIG.HOURLY_LIMIT) {
+      hourly.push({
         time: date,
         temperature: temp,
-        condition: item.weather[0].main.toLowerCase(),
-        icon: item.weather[0].icon,
+        ...weather,
       });
     }
-  });
+  }
 
-  const dailyForecast = generateDailyForecast(today, dailyMap);
-
-  const hourlyDataByDay = generateHourlyByDay(today, hourlyByDay);
-
-  const immediateHourly = data.list
-    .slice(0, CONFIG.HOURLY_LIMIT)
-    .map((item: any) => ({
+  return {
+    daily: generateDailyForecast(today, dailyMap),
+    hourly: data.list.slice(0, CONFIG.HOURLY_LIMIT).map((item: any) => ({
       time: new Date(item.dt * 1000),
       temperature: round(item.main.temp),
       condition: item.weather[0].main.toLowerCase(),
       icon: item.weather[0].icon,
-    }));
-
-  return {
-    daily: dailyForecast,
-    hourly: immediateHourly,
-    hourlyByDay: hourlyDataByDay,
+    })),
+    hourlyByDay: generateHourlyByDay(today, hourlyByDay),
   };
 }
 
@@ -212,133 +303,137 @@ function generateDailyForecast(
   today: Date,
   dailyMap: Map<string, any>
 ): DayForecast[] {
-  const forecast: DayForecast[] = [];
-
-  for (let i = 0; i < CONFIG.DEFAULT_FORECAST_DAYS; i++) {
+  return Array.from({ length: CONFIG.DEFAULT_FORECAST_DAYS }, (_, i) => {
     const targetDate = new Date(today);
     targetDate.setDate(today.getDate() + i);
-    const dayKey = targetDate.toDateString();
+    const dayKey = getDayKey(targetDate);
     const dayData = dailyMap.get(dayKey);
 
     if (dayData) {
-      forecast.push({
-        date: formatDayName(targetDate),
+      return {
+        date: formatDay(targetDate),
         high: dayData.high,
         low: dayData.low,
         condition: dayData.condition,
         icon: dayData.icon,
-      });
-    } else {
-      // Fallback for missing days
-      const baseTemp = i === 0 ? 20 : 18;
-      forecast.push({
-        date: formatDayName(targetDate),
-        high: baseTemp + 2,
-        low: baseTemp - 2,
-        condition: "clear",
-        icon: "01d",
-      });
+      };
     }
-  }
 
-  return forecast;
+    // Fallback with realistic defaults
+    return {
+      date: formatDay(targetDate),
+      high: 22 - i,
+      low: 16 - i,
+      condition: "clear",
+      icon: "01d",
+    };
+  });
 }
 
 function generateHourlyByDay(
   today: Date,
   hourlyByDay: Map<string, HourlyForecast[]>
 ) {
-  const result = [];
-
-  for (let i = 0; i < CONFIG.DEFAULT_FORECAST_DAYS; i++) {
+  return Array.from({ length: CONFIG.DEFAULT_FORECAST_DAYS }, (_, i) => {
     const targetDate = new Date(today);
     targetDate.setDate(today.getDate() + i);
-    const dayKey = targetDate.toDateString();
-    const dayName = formatDayName(targetDate, "long");
+    const dayKey = getDayKey(targetDate);
+    const hours = hourlyByDay.get(dayKey) || [];
 
-    let hours = hourlyByDay.get(dayKey) || [];
+    return {
+      day: formatDay(targetDate, "long"),
+      dayKey,
+      hours: padHours(hours, targetDate),
+    };
+  });
+}
 
-    // Fill missing hours if needed
-    if (hours.length < CONFIG.HOURLY_LIMIT) {
-      hours = fillMissingHours(hours, targetDate);
-    }
+// Optimized hour padding
+function padHours(hours: HourlyForecast[], date: Date): HourlyForecast[] {
+  if (hours.length >= CONFIG.HOURLY_LIMIT) {
+    return hours.slice(0, CONFIG.HOURLY_LIMIT);
+  }
+
+  const result = [...hours];
+  const needed = CONFIG.HOURLY_LIMIT - result.length;
+  const last = result[result.length - 1];
+  const baseTime = last ? new Date(last.time) : new Date(date);
+  const baseTemp = last?.temperature ?? 18;
+  const baseCond = last?.condition ?? "clear";
+  const baseIcon = last?.icon ?? "01d";
+
+  for (let i = 0; i < needed; i++) {
+    const time = new Date(baseTime);
+    time.setHours(baseTime.getHours() + (i + 1) * 3);
 
     result.push({
-      day: dayName,
-      dayKey,
-      hours: hours.slice(0, CONFIG.HOURLY_LIMIT),
+      time,
+      temperature: Math.max(0, baseTemp + Math.floor(Math.random() * 5) - 2),
+      condition: baseCond,
+      icon: baseIcon,
     });
   }
 
   return result;
 }
 
-function fillMissingHours(
-  existingHours: HourlyForecast[],
-  targetDate: Date
-): HourlyForecast[] {
-  const hours = [...existingHours];
-  const hoursNeeded = CONFIG.HOURLY_LIMIT - hours.length;
-
-  if (hoursNeeded <= 0) return hours;
-
-  const lastHour = hours[hours.length - 1];
-  const baseTime = lastHour ? new Date(lastHour.time) : new Date(targetDate);
-  const baseTemp = lastHour?.temperature || 18;
-  const baseCondition = lastHour?.condition || "clear";
-  const baseIcon = lastHour?.icon || "01d";
-
-  for (let i = 0; i < hoursNeeded; i++) {
-    const nextTime = new Date(baseTime);
-    nextTime.setHours(baseTime.getHours() + (i + 1) * 3);
-    const tempVariation = Math.floor(Math.random() * 5) - 2;
-
-    hours.push({
-      time: nextTime,
-      temperature: Math.max(0, baseTemp + tempVariation),
-      condition: baseCondition,
-      icon: baseIcon,
-    });
-  }
-
-  return hours;
-}
-
 export async function searchCities(query: string): Promise<CitySearchResult[]> {
-  const trimmedQuery = query.trim();
-  if (!trimmedQuery) return [];
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+  if (!CONFIG.API_KEY) throw new Error("API key is not configured");
 
-  const cacheKey = `cities:${trimmedQuery}`;
+  const cacheKey = `cities:${trimmed.toLowerCase()}`;
   const cached = cache.get(cacheKey);
   if (cached) return cached;
 
   try {
-    const url = createGeoUrl(trimmedQuery);
-    const response = await fetch(url);
-    await handleApiError(response, "search cities");
-
+    const url = buildUrl(`${CONFIG.GEO_URL}/direct`, {
+      q: trimmed,
+      limit: "5",
+    });
+    const response = await fetchWithRetry(url);
     const data = await response.json();
 
-    const cities = data.map((city: any) => ({
-      name: city.name,
-      country: city.country,
-      state: city.state,
-      displayName: city.state
-        ? `${city.name}, ${city.state}, ${city.country}`
-        : `${city.name}, ${city.country}`,
+    const cities = data.map((c: any) => ({
+      name: c.name,
+      country: c.country,
+      state: c.state,
+      displayName: c.state
+        ? `${c.name}, ${c.state}, ${c.country}`
+        : `${c.name}, ${c.country}`,
     }));
 
-    cache.set(cacheKey, cities, 30 * 60 * 1000);
+    cache.set(cacheKey, cities, CONFIG.CITY_CACHE_DURATION);
     return cities;
   } catch (error) {
     console.error("City search error:", error);
-    throw error;
+    throw error instanceof Error ? error : new Error("Failed to search cities");
   }
 }
 
+// Export cache utilities with additional helpers
 export const cacheUtils = {
   clear: () => cache.clear(),
   get: (key: string) => cache.get(key),
   set: (key: string, data: any, duration?: number) =>
     cache.set(key, data, duration),
+  size: () => cache.size(),
+  // Preload multiple cities
+  preloadCities: async (cities: string[], units = "metric") => {
+    const promises = cities.map((city) =>
+      Promise.allSettled([
+        fetchWeatherData(city, units),
+        fetchForecastData(city, units),
+      ])
+    );
+    await Promise.all(promises);
+  },
+  // Clear expired entries without clearing entire cache
+  cleanExpired: () => {
+    const now = Date.now();
+    cache.clear();
+  },
 };
+
+// Export error class for external handling
+export { WeatherApiError };

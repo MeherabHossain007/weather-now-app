@@ -3,10 +3,9 @@ import { WeatherIcon } from "./weather-icon";
 
 interface WeatherDisplayProps {
   weather: WeatherData;
-  units: Units;
 }
 
-export function WeatherDisplay({ weather, units }: WeatherDisplayProps) {
+export function WeatherDisplay({ weather}: WeatherDisplayProps) {
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString("en-US", {
       weekday: "long",
@@ -18,6 +17,7 @@ export function WeatherDisplay({ weather, units }: WeatherDisplayProps) {
 
   return (
     <div className="relative h-72 rounded-20 p-6 md:p-8 overflow-hidden">
+      {/* Background Image Layer - Desktop */}
       <div
         className="absolute inset-0 opacity-80 hidden md:block"
         style={{
@@ -27,6 +27,7 @@ export function WeatherDisplay({ weather, units }: WeatherDisplayProps) {
           backgroundRepeat: "no-repeat",
         }}
       ></div>
+      {/* Background Image Layer - Mobile */}
       <div
         className="absolute inset-0 opacity-80 block md:hidden"
         style={{
@@ -36,7 +37,9 @@ export function WeatherDisplay({ weather, units }: WeatherDisplayProps) {
           backgroundRepeat: "no-repeat",
         }}
       ></div>
+      {/* Gradient overlay for better text readability */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-600/30 to-purple-700/30"></div>
+      {/* Content Layer */}
       <div className="relative h-full flex flex-col justify-center">
         <div className="relative flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex flex-col justify-center items-center md:justify-start md:items-start gap-3">
@@ -48,7 +51,11 @@ export function WeatherDisplay({ weather, units }: WeatherDisplayProps) {
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <WeatherIcon alt={weather.condition} size="xl" icon={weather.icon} />
+            <WeatherIcon
+              alt={weather.condition}
+              size="xl"
+              icon={weather.icon}
+            />
             <div className="text-right">
               <div className="text-8xl font-bold font-dm-sans-italic text-white drop-shadow-lg">
                 {weather.temperature}°

@@ -77,7 +77,7 @@ export default function WeatherApp() {
       <div className="space-y-6">
         <div className="lg:grid lg:grid-cols-3 gap-8 lg:items-start">
           <div className="lg:col-span-2 flex flex-col gap-12 mb-6 lg:mb-0">
-            <WeatherDisplay weather={weatherData} units={units} />
+            <WeatherDisplay weather={weatherData}/>
             <WeatherStats weather={weatherData} units={units} />
             <DailyForecast forecast={forecastData} units={units} />
           </div>
